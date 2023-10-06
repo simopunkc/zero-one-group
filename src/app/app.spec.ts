@@ -18,3 +18,21 @@ describe('GET /', () => {
     expect(response.json()).toEqual({ message: 'Hello API' });
   });
 });
+
+describe('GET /reset', () => {
+  let server: FastifyInstance;
+
+  beforeEach(() => {
+    server = Fastify();
+    server.register(app);
+  });
+
+  it('should respond with a message', async () => {
+    const response = await server.inject({
+      method: 'GET',
+      url: '/reset',
+    });
+
+    expect(response.json()).toEqual({ message: 'Reset DB Success' });
+  });
+});

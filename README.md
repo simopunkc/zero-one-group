@@ -56,3 +56,9 @@ nx start
 ```
 
 Open your browser and navigate to http://localhost:3000/. Happy coding!
+
+## Run unit tests
+
+```bash
+nx test
+```

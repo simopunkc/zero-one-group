@@ -10,6 +10,7 @@ export default async function (fastify: FastifyInstance) {
   );
   
   fastify.get('/reset', async () => {
-    return await resetDb(fastify.pg);
+    await resetDb(fastify.pg);
+    return { message: 'Reset DB Success' };
   });
 }
