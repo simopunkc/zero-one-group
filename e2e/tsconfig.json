@@ -8,6 +8,22 @@
     }
   ],
   "compilerOptions": {
-    "esModuleInterop": true
+    "rootDir": ".",
+    "sourceMap": true,
+    "declaration": false,
+    "moduleResolution": "node",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "importHelpers": true,
+    "target": "es2015",
+    "module": "esnext",
+    "lib": ["es2020", "dom"],
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+        "@api/src/data-source": ["../src/data-source.ts"]
+    },
+    "esModuleInterop": true,
   }
 }

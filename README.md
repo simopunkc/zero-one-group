@@ -46,8 +46,10 @@ exit
 
 ```bash
 cd /home/anonymous/zero-one-group
-echo "DB_CONN_STRING=postgres://anonymous:anonymous@127.0.0.1:5432/zero_one_group" > .env
+touch .env
 ```
+
+configure the .env file according to the example in the .env.example file
 
 ## Start the app
 
@@ -62,3 +64,50 @@ Open your browser and navigate to http://localhost:3000/. Happy coding!
 ```bash
 nx test
 ```
+
+## Run E2E tests
+
+```bash
+nx e2e
+```
+
+## List endpoints
+
+All endpoints for the example are:
+
+- GET /
+  - Hello
+- GET /reset
+  - Reset DB with empty tables
+- GET /api/news
+  - Get all news
+- GET /api/news/drafted
+  - Get all drafted news
+- GET /api/news/published
+  - Get all published news
+- GET /api/news/deleted
+  - Get all deleted news
+- GET /api/news/:id
+  - Get new by ID
+- POST /api/news
+  - Create new
+- PUT /api/news/:id
+  - Replace existing news
+- PATCH /api/news/:id/status_content
+  - Update existing news status content
+- DELETE /api/news/:id
+  - Soft delete news
+- GET /api/topics
+  - Get all topics
+- GET /api/topics/:idTopic
+  - Get topic by ID
+- POST /api/topics
+  - Create topic
+- PATCH /api/topics/:idTopic
+  - Update topic by ID
+- GET /api/topics/:idTopic/news
+  - Get all news by ID topic
+- POST /api/topics/:idTopic/news/:id
+  - Add topic to new
+- DELETE /api/topics/:idTopic/news/:id
+  - Delete topic from new
