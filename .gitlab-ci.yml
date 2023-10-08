@@ -1,0 +1,27 @@
+image: docker.io/node:lts-hydrogen
+
+stages:
+  - build
+  - test
+
+build_blog:
+  stage: build
+  script:
+    - npm install -g nx@latest
+    - npm cache clean --force
+    - npm install
+  artifacts:
+    paths:
+      - node_modules/
+  only:
+    - master
+
+unit_test_blog:
+  stage: test
+  script:
+    - nx test
+  dependencies:
+    - build_blog
+  only:
+    - master
+  allow_failure: true
