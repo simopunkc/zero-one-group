@@ -1,26 +1,43 @@
-import { runQuery } from '@api/db/utils';
 import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
-
-const getAllTopics = `SELECT * from topics;`;
-const getTopicById = `SELECT * from topics WHERE id=$1 LIMIT 1;`;
-const createTopic = `INSERT INTO topics (category_name) VALUES ($1) RETURNING * ;`;
-const updateTopic = `UPDATE topics SET category_name=$1, updated_at=$2 WHERE id=$3 RETURNING * ;`;
-const getAllNewByTopicId = `SELECT a.* from news a LEFT JOIN ref_news_topics b on a.id=b.news_id where b.news_id=$1`;
-
-
+import { dbConnection } from '@api/src/data-source';
+import { Topics } from '@api/src/entity/Topics';
 
 export default async function (fastify: FastifyInstance) {
   fastify.get('/api/topics', async () => {
-    const { rows } = await runQuery(fastify.pg, getAllTopics);
-    return rows;
+    try {
+      const connection = await dbConnection.getConnection();
+      const topicsRepository = connection.getRepository(Topics);
+      const rows =  await topicsRepository.find();
+      return {
+        message: 'list topics',
+        data: rows,
+      };
+    } catch (error) {
+      return {
+        message: error.message,
+      }
+    }
   });
 
   fastify.get(
     '/api/topics/:idTopic',
     async (request: FastifyRequest<{ Params: { idTopic: number } }>) => {
-      const { idTopic } = request.params;
-      const { rows } = await runQuery(fastify.pg, getTopicById, [idTopic]);
-      return rows;
+      try {
+        const { idTopic } = request.params;
+        const connection = await dbConnection.getConnection();
+        const topicsRepository = connection.getRepository(Topics);
+        const rows =  await topicsRepository.findOneBy({
+          id: idTopic
+        });
+        return {
+          message: 'single topic',
+          data: rows,
+        };
+      } catch (error) {
+        return {
+          message: error.message,
+        }
+      }
     }
   );
 
@@ -31,11 +48,21 @@ export default async function (fastify: FastifyInstance) {
         Body: { category_name: string; };
       }>
     ) => {
-      const { category_name } = request.body;
-      const { rows } = await runQuery(fastify.pg, createTopic, [
-        category_name,
-      ]);
-      return rows;
+      try {
+        const { category_name } = request.body;
+        const topics = new Topics();
+        topics.category_name = category_name;
+        const connection = await dbConnection.getConnection();
+        const rows = await connection.manager.save(topics);
+        return {
+          message: 'create topic',
+          data: rows,
+        };
+      } catch (error) {
+        return {
+          message: error.message,
+        }
+      }
     }
   );
 
@@ -47,23 +74,25 @@ export default async function (fastify: FastifyInstance) {
         Body: { category_name: string };
       }>
     ) => {
-      const { idTopic } = request.params;
-      const { category_name } = request.body;
-      const { rows } = await runQuery(fastify.pg, updateTopic, [
-        category_name,
-        new Date().toISOString(),
-        idTopic
-      ]);
-      return rows;
-    }
-  );
-
-  fastify.get(
-    '/api/topics/:idTopic/news',
-    async (request: FastifyRequest<{ Params: { idTopic: number } }>) => {
-      const { idTopic } = request.params;
-      const { rows } = await runQuery(fastify.pg, getAllNewByTopicId, [idTopic]);
-      return rows;
+      try {
+        const { idTopic } = request.params;
+        const { category_name } = request.body;
+        const connection = await dbConnection.getConnection();
+        const topicsRepository = connection.getRepository(Topics);
+        const topicToUpdate = await topicsRepository.findOneBy({ id: idTopic });
+        if (!topicToUpdate) throw new Error(`Could not get new ${idTopic} from database`);
+        topicToUpdate.category_name = category_name;
+        topicToUpdate.updated_at = new Date().toISOString();
+        const rows = await topicsRepository.save(topicToUpdate);
+        return {
+          message: 'update topic',
+          data: rows,
+        };
+      } catch (error) {
+        return {
+          message: error.message,
+        }
+      }
     }
   );
 }

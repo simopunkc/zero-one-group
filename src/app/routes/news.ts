@@ -1,45 +1,89 @@
-import { runQuery } from '@api/db/utils';
 import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
-
-const getAllNews = `SELECT * from news;`;
-const getAllDraftedNews = `SELECT * from news WHERE status_content='draft';`;
-const getAllPublishedNews = `SELECT * from news WHERE status_content='published';`;
-const getAllDeletedNews = `SELECT * from news WHERE status_content='deleted';`;
-const getNewById = `SELECT * from news WHERE id=$1 LIMIT 1;`;
-const createNew = `INSERT INTO news (title, content, status_content)
-VALUES ($1, $2, $3) RETURNING * ;`;
-const replaceNew = `UPDATE news SET title=$1, content=$2, status_content=$3 WHERE id = $4 RETURNING * ;`;
-const updateNewCurrentStatus = `UPDATE news SET status_content=$1, updated_at=$2 WHERE id = $3 RETURNING * ;`;
-const softDeleteNew = `UPDATE news SET status_content='deleted', updated_at=$1 WHERE id = $2 RETURNING * ;`;
+import { dbConnection } from '@api/src/data-source';
+import { News, StatusContent } from '@api/src/entity/News';
 
 export default async function (fastify: FastifyInstance) {
   fastify.get('/api/news', async () => {
-    const { rows } = await runQuery(fastify.pg, getAllNews);
-    console.log(rows);
-    return rows;
+    try {
+      const connection = await dbConnection.getConnection();
+      const newsRepository = connection.getRepository(News);
+      const rows = await newsRepository.find();
+      return {
+        message: 'list news',
+        data: rows,
+      };
+    } catch (error) {
+      return {
+        message: error.message,
+      }
+    }
   });
 
   fastify.get('/api/news/drafted', async () => {
-    const { rows } = await runQuery(fastify.pg, getAllDraftedNews);
-    return rows;
+    try {
+      const connection = await dbConnection.getConnection();
+      const newsRepository = connection.getRepository(News);
+      const rows = await newsRepository.findBy({ status_content: StatusContent.DRAFTED });
+      return {
+        message: 'list drafted news',
+        data: rows,
+      };
+    } catch (error) {
+      return {
+        message: error.message,
+      }
+    }
   });
 
   fastify.get('/api/news/published', async () => {
-    const { rows } = await runQuery(fastify.pg, getAllPublishedNews);
-    return rows;
+    try {
+      const connection = await dbConnection.getConnection();
+      const newsRepository = connection.getRepository(News);
+      const rows = await newsRepository.findBy({ status_content: StatusContent.PUBLISHED });
+      return {
+        message: 'list published news',
+        data: rows,
+      };
+    } catch (error) {
+      return {
+        message: error.message,
+      }
+    }
   });
 
   fastify.get('/api/news/deleted', async () => {
-    const { rows } = await runQuery(fastify.pg, getAllDeletedNews);
-    return rows;
+    try {
+      const connection = await dbConnection.getConnection();
+      const newsRepository = connection.getRepository(News);
+      const rows = await newsRepository.findBy({ status_content: StatusContent.DELETED });
+      return {
+        message: 'list deleted news',
+        data: rows,
+      };
+    } catch (error) {
+      return {
+        message: error.message,
+      }
+    }
   });
 
   fastify.get(
     '/api/news/:id',
     async (request: FastifyRequest<{ Params: { id: number } }>) => {
-      const { id } = request.params;
-      const { rows } = await runQuery(fastify.pg, getNewById, [id]);
-      return rows;
+      try {
+        const { id } = request.params;
+        const connection = await dbConnection.getConnection();
+        const newsRepository = connection.getRepository(News);
+        const rows = await newsRepository.findOneBy({ id: id });
+        return {
+          message: 'single new',
+          data: rows,
+        };
+      } catch (error) {
+        return {
+          message: error.message,
+        }
+      }
     }
   );
 
@@ -47,16 +91,27 @@ export default async function (fastify: FastifyInstance) {
     '/api/news',
     async (
       request: FastifyRequest<{
-        Body: { title: string; content: string; status_content: string };
+        Body: { title: string; content: string; status_content: StatusContent };
       }>
     ) => {
-      const { title, content, status_content } = request.body;
-      const { rows } = await runQuery(fastify.pg, createNew, [
-        title,
-        content,
-        status_content,
-      ]);
-      return rows;
+      try {
+        const { title, content, status_content } = request.body;
+
+        const news = new News();
+        news.title = title;
+        news.content = content;
+        news.status_content = status_content;
+        const connection = await dbConnection.getConnection();
+        const rows = await connection.manager.save(news);
+        return {
+          message: 'create new',
+          data: rows,
+        };
+      } catch (error) {
+        return {
+          message: error.message,
+        }
+      }
     }
   );
 
@@ -65,18 +120,29 @@ export default async function (fastify: FastifyInstance) {
     async (
       request: FastifyRequest<{
         Params: { id: number };
-        Body: { title: string; content: string; status_content: string };
+        Body: { title: string; content: string; status_content: StatusContent };
       }>
     ) => {
-      const { title, content, status_content } = request.body;
-      const { id } = request.params;
-      const { rows } = await runQuery(fastify.pg, replaceNew, [
-        title,
-        content,
-        status_content,
-        id,
-      ]);
-      return rows;
+      try {
+        const { title, content, status_content } = request.body;
+        const { id } = request.params;
+        const connection = await dbConnection.getConnection();
+        const newsRepository = connection.getRepository(News);
+        const newToReplace = await newsRepository.findOneBy({ id: id });
+        if (!newToReplace) throw new Error(`Could not get new ${id} from database`);
+        newToReplace.title = title;
+        newToReplace.content = content;
+        newToReplace.status_content = status_content;
+        const rows = await newsRepository.save(newToReplace);
+        return {
+          message: 'replace new',
+          data: rows,
+        };
+      } catch (error) {
+        return {
+          message: error.message,
+        }
+      }
     }
   );
 
@@ -85,17 +151,28 @@ export default async function (fastify: FastifyInstance) {
     async (
       request: FastifyRequest<{
         Params: { id: number };
-        Body: { status_content: string };
+        Body: { status_content: StatusContent };
       }>
     ) => {
-      const { id } = request.params;
-      const { status_content } = request.body;
-      const { rows } = await runQuery(fastify.pg, updateNewCurrentStatus, [
-        status_content,
-        new Date().toISOString(),
-        id
-      ]);
-      return rows;
+      try {
+        const { id } = request.params;
+        const { status_content } = request.body;
+        const connection = await dbConnection.getConnection();
+        const newsRepository = connection.getRepository(News);
+        const newToUpdate = await newsRepository.findOneBy({ id: id });
+        if (!newToUpdate) throw new Error(`Could not get new ${id} from database`);
+        newToUpdate.status_content = status_content;
+        newToUpdate.updated_at = new Date().toISOString();
+        const rows = await newsRepository.save(newToUpdate);
+        return {
+          message: 'update new',
+          data: rows,
+        };
+      } catch (error) {
+        return {
+          message: error.message,
+        }
+      }
     }
   );
 
@@ -106,12 +183,24 @@ export default async function (fastify: FastifyInstance) {
         Params: { id: number };
       }>
     ) => {
-      const { id } = request.params;
-      const { rows } = await runQuery(fastify.pg, softDeleteNew, [
-        new Date().toISOString(),
-        id
-      ]);
-      return rows;
+      try {
+        const { id } = request.params;
+        const connection = await dbConnection.getConnection();
+        const newsRepository = connection.getRepository(News);
+        const newToDelete = await newsRepository.findOneBy({ id: id });
+        if (!newToDelete) throw new Error(`Could not get new ${id} from database`);
+        newToDelete.status_content = StatusContent.DELETED;
+        newToDelete.updated_at = new Date().toISOString();
+        const rows = await newsRepository.save(newToDelete);
+        return {
+          message: 'delete new',
+          data: rows,
+        };
+      } catch (error) {
+        return {
+          message: error.message,
+        }
+      }
     }
   );
 }

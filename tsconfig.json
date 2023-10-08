@@ -1,32 +1,38 @@
 {
-  "compilerOptions": {
-    "rootDir": ".",
-    "sourceMap": true,
-    "declaration": false,
-    "moduleResolution": "node",
-    "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
-    "importHelpers": true,
-    "target": "es2015",
-    "module": "esnext",
-    "lib": ["es2020", "dom"],
-    "skipLibCheck": true,
-    "skipDefaultLibCheck": true,
-    "baseUrl": ".",
-    "paths": {
-      "@api/db/utils": ["db/utils/src/index.ts"]
-    },
-    "esModuleInterop": true
-  },
-  "files": [],
-  "include": [],
-  "references": [
-    {
-      "path": "./tsconfig.app.json"
-    },
-    {
-      "path": "./tsconfig.spec.json"
-    }
-  ],
-  "exclude": ["node_modules", "tmp"]
-}
+   "compilerOptions": {
+     "rootDir": ".",
+     "sourceMap": true,
+     "declaration": false,
+     "moduleResolution": "node",
+     "emitDecoratorMetadata": true,
+     "experimentalDecorators": true,
+     "importHelpers": true,
+     "target": "es2015",
+     "module": "esnext",
+     "lib": ["es2020", "dom"],
+     "skipLibCheck": true,
+     "skipDefaultLibCheck": true,
+     "baseUrl": ".",
+     "paths": {
+          "@api/migration/data-dummy": ["src/migration/data-dummy.ts"],
+          "@api/migration/data-test-dummy": ["src/migration/data-test-dummy.ts"],
+          "@api/src/data-source": ["src/data-source.ts"],
+          "@api/src/entity/News": ["src/entity/News.ts"],
+          "@api/src/entity/Topics": ["src/entity/Topics.ts"],
+          "@api/src/entity/RefNewsTopics": ["src/entity/RefNewsTopics.ts"],
+     },
+     "esModuleInterop": true
+   },
+   "files": [],
+   "include": [],
+   "references": [
+     {
+       "path": "./tsconfig.app.json"
+     },
+     {
+       "path": "./tsconfig.spec.json"
+     }
+   ],
+   "exclude": ["node_modules", "tmp"]
+ }
+ 

@@ -1,5 +1,7 @@
+import "reflect-metadata";
 import Fastify from 'fastify';
 import { app } from './app/app';
+import { dbConnection, dbUtils } from "@api/src/data-source";
 
 const host = process.env.HOST ?? 'localhost';
 const port = process.env.PORT ? Number(process.env.PORT) : 3000;
@@ -9,15 +11,20 @@ const server = Fastify({
   logger: true,
 });
 
-// Register your application as a normal plugin.
-server.register(app);
+(async () => {
+  // await dbUtils.resetDb();
+  // await dbUtils.setupDummyData();
 
-// Start listening.
-server.listen({ port, host }, (err) => {
-  if (err) {
-    server.log.error(err);
-    process.exit(1);
-  } else {
-    console.log(`[ ready ] http://${host}:${port}`);
-  }
-});
+  // Register your application as a normal plugin.
+  server.register(app);
+
+  // Start listening.
+  server.listen({ port, host }, (err) => {
+    if (err) {
+      server.log.error(err);
+      process.exit(1);
+    } else {
+      console.log(`[ ready ] http://${host}:${port}`);
+    }
+  });
+})();
